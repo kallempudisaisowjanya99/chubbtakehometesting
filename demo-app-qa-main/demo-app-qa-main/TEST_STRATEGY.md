@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Scope** | UI (Next.js), BFF, claims-service, and their infrastructure (Keycloak, PostgreSQL, Redis, Kafka, Debezium) |
-| **Related** | [UNIT_TEST_NOTES.md](UNIT_TEST_NOTES.md) · [INTEGRATION_TEST_NOTES.md](INTEGRATION_TEST_NOTES.md) · [CONTRACT_TEST_NOTES.md](CONTRACT_TEST_NOTES.md) · [E2E_TEST_NOTES.md](E2E_TEST_NOTES.md) · [ARCHITECTURE.md](ARCHITECTURE.md) |
+| **Related** | [UNIT_TEST_NOTES.md](UNIT_TEST_NOTES.md) · [INTEGRATION_TEST_NOTES.md](INTEGRATION_TEST_NOTES.md) · [CONTRACT_TEST_NOTES.md](CONTRACT_TEST_NOTES.md) · [E2E_TEST_NOTES.md](E2E_TEST_NOTES.md) · [LOAD_TEST_NOTES.md](LOAD_TEST_NOTES.md) · [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 ## 1. Purpose
 
@@ -58,7 +58,7 @@ The suite is a test pyramid: many fast, isolated tests at the bottom, and a few 
 | **Integration** | A service works with its real infrastructure: DB schema and queries, Redis, Kafka, JWT security | Spring Boot Test + **Testcontainers** | Real Postgres, Redis, Kafka in Docker | ✅ Done; found D1–D4 |
 | **Contract** | The BFF and claims-service agree on the API, without deploying both | **Pact** (BFF = consumer, claims-service = provider; already in the POMs) | Mock provider; provider verification on Testcontainers | ✅ 15 interactions; 14 verify, 1 fails (D3) |
 | **End-to-end** | Main user journeys work through the real UI on the full stack | **Playwright** | Full Docker stack | ✅ 29 tests; found D5–D8 |
-| **Performance** | Response times and errors under expected and peak load | **k6** | Full stack (perf-sized) | ⏳ Planned |
+| **Performance** | Response times and errors under expected and peak load | **k6** | Full stack (perf-sized) | ✅ Smoke, load and stress run; load passes, stress breaks the read target (P1: no paging) |
 | **Security** | Authorization, CSRF, input handling, dependency CVEs | Integration and E2E negative tests, OWASP ZAP baseline, `mvn dependency-check` / `npm audit` | Integration env / full stack | 🟡 Part done (authorization and CSRF found D1, D6) |
 | **Manual / exploratory** | Usability, visual issues, edge cases automation misses | Written manual test scripts, time-boxed exploratory sessions | Full stack | ⏳ Planned |
 
@@ -96,16 +96,22 @@ The suite is a test pyramid: many fast, isolated tests at the bottom, and a few 
 - Logins are reused through Playwright storage state, which avoids Keycloak's brute-force lockout.
 - Chromium runs on every build; Firefox runs in CI.
 
-### 4.5 Performance (planned)
-- Scenarios:
-  - claimant browse and submit;
-  - admin list and status change;
-  - dashboard with the cache cold and warm.
-- Load profiles: smoke (1 user), load (expected peak), stress (find the breaking point), soak (1 h, to catch leaks and pool exhaustion).
+### 4.5 Performance (k6, `code/load-tests/`)
+- **Scenarios** (through the BFF, as the UI calls it):
+  - claimants browse, submit and view claims while admins review them at the same time;
+  - the dashboard with and without the cache (`dashboard-cache.js`).
+- Load profiles: smoke (1 user), load (expected peak), stress (find the breaking point), soak (1 h, to catch leaks and pool exhaustion). Smoke, load and stress have been run; soak is built but not run yet.
 - **Proposed thresholds, to be agreed with the product owner:**
-  - p95 < 500 ms for reads and < 1 s for writes;
+  - p95 < 500 ms for reads and < 1 s for writes, overall and per endpoint;
   - error rate < 1 %;
-  - a WebSocket event delivered within 2 s.
+  - a WebSocket event delivered within 2 s (not yet scripted).
+- **Results:**
+  - Load (25 users) passes every threshold.
+  - Stress (180 users) breaks the read target: p95 585 ms.
+  - Main finding P1: the claim lists have no paging. The admin list now takes 0.5–0.9 s even for a single user, and it gets slower as claims accumulate.
+  - D2 confirmed under load: the cache hit rate is 0 %.
+  - D3 shows up when two admins review the same claim.
+  - See [LOAD_TEST_NOTES.md](LOAD_TEST_NOTES.md).
 - Watch: DB connections, Kafka consumer lag, Redis hit rate, JVM heap.
 
 ### 4.6 Security
@@ -218,13 +224,13 @@ The suite is a test pyramid: many fast, isolated tests at the bottom, and a few 
 | The E2E suite needs the full stack, so it is slow to start and can be flaky | Health-check global setup; keep E2E to the main journeys only |
 | Two event paths (direct and CDC) behave differently | Test both: integration tests use direct publishing; add a CDC profile run to nightly E2E |
 | claims-service is reachable without going through the BFF | Security tests target claims-service directly (D1) |
-| No agreed performance targets | The thresholds in §4.5 are proposals, to be confirmed |
+| No agreed performance targets | The thresholds in §4.5 are proposals, to be confirmed. Load tests write to the shared demo DB, so run them in a separate environment |
 | The demo environment is not production-like (dev mode, in-memory Keycloak) | Run performance and security scans against a production-like build |
 
 ## 11. Next steps
 
 1. Fix D1–D8 (with sign-off), then rerun all suites to confirm.
 2. Publish pacts to a Pact Broker and add Kafka message pacts (§4.3).
-3. Add k6 load tests (§4.5).
+3. Add paging to the claim lists (P1), then rerun stress and run soak; add a WebSocket load scenario (§4.5).
 4. Write the manual test scripts (§4.7).
 5. Set up the CI pipeline (§6).
