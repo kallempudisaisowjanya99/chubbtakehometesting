@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Scope** | UI (Next.js), BFF, claims-service, and their infrastructure (Keycloak, PostgreSQL, Redis, Kafka, Debezium) |
-| **Related** | [UNIT_TEST_NOTES.md](UNIT_TEST_NOTES.md) · [INTEGRATION_TEST_NOTES.md](INTEGRATION_TEST_NOTES.md) · [CONTRACT_TEST_NOTES.md](CONTRACT_TEST_NOTES.md) · [E2E_TEST_NOTES.md](E2E_TEST_NOTES.md) · [LOAD_TEST_NOTES.md](LOAD_TEST_NOTES.md) · [ARCHITECTURE.md](ARCHITECTURE.md) |
+| **Related** | [UNIT_TEST_NOTES.md](UNIT_TEST_NOTES.md) · [INTEGRATION_TEST_NOTES.md](INTEGRATION_TEST_NOTES.md) · [CONTRACT_TEST_NOTES.md](CONTRACT_TEST_NOTES.md) · [E2E_TEST_NOTES.md](E2E_TEST_NOTES.md) · [LOAD_TEST_NOTES.md](LOAD_TEST_NOTES.md) · [MANUAL_TEST_SCRIPTS.md](MANUAL_TEST_SCRIPTS.md) · [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 ## 1. Purpose
 
@@ -60,7 +60,7 @@ The suite is a test pyramid: many fast, isolated tests at the bottom, and a few 
 | **End-to-end** | Main user journeys work through the real UI on the full stack | **Playwright** | Full Docker stack | ✅ 29 tests; found D5–D8 |
 | **Performance** | Response times and errors under expected and peak load | **k6** | Full stack (perf-sized) | ✅ Smoke, load and stress run; load passes, stress breaks the read target (P1: no paging) |
 | **Security** | Authorization, CSRF, input handling, dependency CVEs | Integration and E2E negative tests, OWASP ZAP baseline, `mvn dependency-check` / `npm audit` | Integration env / full stack | 🟡 Part done (authorization and CSRF found D1, D6) |
-| **Manual / exploratory** | Usability, visual issues, edge cases automation misses | Written manual test scripts, time-boxed exploratory sessions | Full stack | ⏳ Planned |
+| **Manual / exploratory** | Usability, visual issues, edge cases automation misses | Written manual test scripts, time-boxed exploratory sessions | Full stack | ✅ 24 scripts + 6 charters written; first cycle not yet run |
 
 ### 4.1 Unit
 - Backend: domain rules (the transition map, validation), use cases, mappers and exception handlers.
@@ -120,7 +120,7 @@ The suite is a test pyramid: many fast, isolated tests at the bottom, and a few 
 - **Input:** test oversized and malicious input (XSS in the description, SQL metacharacters), and that errors don't leak internal details.
 - **Automated scans:** an OWASP ZAP baseline scan of the UI and BFF, plus dependency CVE scans in CI.
 
-### 4.7 Manual and exploratory (planned)
+### 4.7 Manual and exploratory ([MANUAL_TEST_SCRIPTS.md](MANUAL_TEST_SCRIPTS.md))
 - Scripted manual tests cover what is hard to automate cheaply:
   - visual layout on mobile and desktop;
   - screen-reader and keyboard navigation;
@@ -232,5 +232,5 @@ The suite is a test pyramid: many fast, isolated tests at the bottom, and a few 
 1. Fix D1–D8 (with sign-off), then rerun all suites to confirm.
 2. Publish pacts to a Pact Broker and add Kafka message pacts (§4.3).
 3. Add paging to the claim lists (P1), then rerun stress and run soak; add a WebSocket load scenario (§4.5).
-4. Write the manual test scripts (§4.7).
+4. Run the first manual cycle and exploratory charters EX-01 to EX-06 (§4.7); confirm the two suspected defects (toast link to a missing claim page; login ignores `redirect`).
 5. Set up the CI pipeline (§6).
