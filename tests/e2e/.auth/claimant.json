@@ -1,0 +1,45 @@
+{
+  "cookies": [
+    {
+      "name": "access_token",
+      "value": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJmdkc3VUR4YlMxdER6aXFyLTRFSHF6T212b0IzcTdoNDhCdC15WlVuSkdFIn0.eyJleHAiOjE3OTUwNzMzNTQsImlhdCI6MTc5NTA3MTU1NCwianRpIjoib25ydHJvOjVkODg4NWM4LWQyMzgtNDgzMS01ZDVhLWY3MDk5ZTBiM2M1YyIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODE4MC9yZWFsbXMvZGVtby1hcHAiLCJzdWIiOiI2ZTk4YWExYy01OGNiLTQ3NWYtOWJhZi0xNmM2YmY2MWI5OTIiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJkZW1vLWFwcC11aSIsInNpZCI6IlRiMHFCcy1pUnI4S2V6WW4wbFNLbHdrRSIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiaHR0cDovL2xvY2FsaG9zdDozMDAwIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJjbGFpbWFudCJdfSwic2NvcGUiOiJlbWFpbCBwcm9maWxlIiwiZW1haWxfdmVyaWZpZWQiOnRydWUsInJvbGVzIjpbImNsYWltYW50Il0sIm5hbWUiOiJUZXN0IENsYWltYW50IiwicHJlZmVycmVkX3VzZXJuYW1lIjoiY2xhaW1hbnRAZGVtby5jb20iLCJnaXZlbl9uYW1lIjoiVGVzdCIsImZhbWlseV9uYW1lIjoiQ2xhaW1hbnQiLCJlbWFpbCI6ImNsYWltYW50QGRlbW8uY29tIn0.JyRhqlVcecF5XPsuaWhcG2974P2V6EvK-EGS5U46cSNS6XyYo4IT0P14qpvGx8p4g5nJBB0xSTpvgCcgh2EBFdQg9N6rLgeJvPGWR4WezAq5UejQFgWHjNBLInGfwioLEXAILpW36Dc4u0rSZlwqXGsNUBjO6MJr-DFwk_oPZY2SQZlW5er-F7Df5hx0dMr8CYNISjLG8jDwCFJHK1MkqwNYqrgOEPWfvrmL0INnaDPTJz1HdBTGSWz99OFHAxZeXkgC_RfoMVlgC3qvcMM2E0VpCS3c3Y5PFQ4EiLnvpA_KvxNbOID-52SskUEyOgBsq8Loo_Uv66bjzhVEKicSBw",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1795071854.398427,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Strict"
+    },
+    {
+      "name": "refresh_token",
+      "value": "eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICI1MmYwNDgzYi05NTg5LTQ2Y2UtYjVhOS03YTQxZDJlZDRkYWMifQ.eyJleHAiOjE3OTUwNzMzNTQsImlhdCI6MTc5NTA3MTU1NCwianRpIjoiMmUzNTU5YmEtYzFiZS05YTA3LWI4YTUtMWU2OWFlMzdlNzRmIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgwL3JlYWxtcy9kZW1vLWFwcCIsImF1ZCI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODE4MC9yZWFsbXMvZGVtby1hcHAiLCJzdWIiOiI2ZTk4YWExYy01OGNiLTQ3NWYtOWJhZi0xNmM2YmY2MWI5OTIiLCJ0eXAiOiJSZWZyZXNoIiwiYXpwIjoiZGVtby1hcHAtdWkiLCJzaWQiOiJUYjBxQnMtaVJyOEtlelluMGxTS2x3a0UiLCJzY29wZSI6InJvbGVzIGVtYWlsIHdlYi1vcmlnaW5zIHByb2ZpbGUgYmFzaWMgYWNyIiwicmV1c2VfaWQiOiIwNjMxOTVmOC0zNzQxLTRjODktYmIyOC1lNWExMDA0YzU1ODYifQ.FoSYuSW6kQcCywy5sPHIHGjAv6A5rNwfze6eJNPh2NHzsbb3ehJf_b9ROT1as5r-k3cBmI5X-WWC4npUmRRWYA",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1795073354.398481,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Strict"
+    },
+    {
+      "name": "XSRF-TOKEN",
+      "value": "c2ab7d65-d616-45de-9e62-ad195d4c33b8",
+      "domain": "localhost",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": [
+    {
+      "origin": "http://localhost:3001",
+      "localStorage": [
+        {
+          "name": "auth-storage",
+          "value": "{\"state\":{\"user\":{\"userId\":\"6e98aa1c-58cb-475f-9baf-16c6bf61b992\",\"email\":\"claimant@demo.com\",\"name\":\"Test Claimant\",\"role\":\"CLAIMANT\"},\"isAuthenticated\":true},\"version\":0}"
+        }
+      ]
+    }
+  ]
+}

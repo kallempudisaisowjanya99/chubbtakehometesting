@@ -56,7 +56,7 @@ Kafka uses `kafka-native` because it is the image family that Testcontainers' `K
   - password grant for `admin@demo.com` / `claimant@demo.com`
   - client-credentials for the BFF service account
 - All classes share one Spring context, so the containers start once per run.
-- Direct-Kafka mode is used (`app.events.cdc-enabled=false`, the docker-compose default).
+- Direct-Kafka mode is used (`app.events.cdc-enabled=false`, the README's documented default; note that `docker-compose.apps.yml` actually ships with CDC enabled, see `E2E_TEST_NOTES.md`).
 - Tests use random IDs and assert on their own data or on deltas, so they are order-independent. No tables are truncated.
 
 | Class | What it proves |
