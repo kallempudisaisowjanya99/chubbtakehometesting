@@ -32,3 +32,6 @@ venv/
 
 # MyPy
 .mypy_cache/
+
+# Maven build output
+**/target/

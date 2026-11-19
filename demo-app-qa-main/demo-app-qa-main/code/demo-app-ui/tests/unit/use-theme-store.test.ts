@@ -74,17 +74,25 @@ describe('useThemeStore', () => {
     expect(parsed.state.isDark).toBe(true);
   });
 
-  it('restores theme from localStorage on initialization', () => {
-    // Simulate stored state
+  it('restores theme from localStorage on initialization', async () => {
+    // Simulate state saved by a previous session
     localStorage.setItem('theme-storage', JSON.stringify({
       state: { theme: 'warm', isDark: true },
       version: 0,
     }));
 
-    // Re-create store to trigger persistence rehydration
-    // Note: In real app, this happens on page load
-    const storedState = JSON.parse(localStorage.getItem('theme-storage')!);
-    expect(storedState.state.theme).toBe('warm');
-    expect(storedState.state.isDark).toBe(true);
+    // Trigger zustand's persistence rehydration (what happens on page load).
+    // Previously this test only read back the value it had just written and never touched the store.
+    await useThemeStore.persist.rehydrate();
+
+    expect(useThemeStore.getState().theme).toBe('warm');
+    expect(useThemeStore.getState().isDark).toBe(true);
+  });
+
+  it('does not persist the theme to sessionStorage (preference must survive new tabs)', () => {
+    useThemeStore.getState().setTheme('corporate');
+
+    expect(sessionStorage.getItem('theme-storage')).toBeNull();
+    expect(localStorage.getItem('theme-storage')).not.toBeNull();
   });
 });

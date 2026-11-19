@@ -11,8 +11,10 @@
     "generate:api": "npx --yes @openapitools/openapi-generator-cli generate -i ../bff-service/src/main/resources/openapi/bff-api.yml -g typescript-fetch -o src/lib/api/generated --additional-properties=supportsES6=true,typescriptThreePlus=true",
     "generate:stubs": "python3 ../../scripts/generate-wiremock-stubs.py ../bff-service/src/main/resources/openapi/bff-api.yml mocks/bff-stubs bff",
     "mock:bff": "./scripts/start-wiremock.sh 8080",
+    "pretest": "npm run generate:api",
     "test": "vitest run",
     "test:watch": "vitest",
+    "pretest:coverage": "npm run generate:api",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
@@ -36,6 +38,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "jose": "^6.1.3",

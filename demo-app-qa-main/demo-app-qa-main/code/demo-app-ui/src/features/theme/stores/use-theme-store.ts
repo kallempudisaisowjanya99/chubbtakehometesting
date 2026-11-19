@@ -22,7 +22,8 @@ export const useThemeStore = create<ThemeStore>()(
     }),
     {
       name: 'theme-storage',
-      storage: createJSONStorage(() => sessionStorage),
+      // localStorage so the user's theme preference survives new tabs / browser restarts.
+      storage: createJSONStorage(() => localStorage),
     }
   )
 );

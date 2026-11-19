@@ -4,6 +4,7 @@ import com.example.demo.application.exceptions.UserNotFoundException;
 import com.example.demo.domain.claim.Claim;
 import com.example.demo.domain.claim.ClaimRepository;
 import com.example.demo.domain.claim.ClaimStatus;
+import com.example.demo.domain.claim.events.ClaimSubmitted;
 import com.example.demo.fixtures.ClaimTestBuilder;
 import com.example.demo.user.domain.User;
 import com.example.demo.user.domain.UserId;
@@ -13,9 +14,13 @@ import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -42,6 +47,10 @@ class CreateClaimUseCaseTest {
     @Mock
     private Counter mockCounter;
 
+    // Added with the CDC/direct-publish feature; without it @InjectMocks passes null -> NPE.
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @InjectMocks
     private CreateClaimUseCase useCase;
 
@@ -49,6 +58,8 @@ class CreateClaimUseCaseTest {
     void setUp() {
         // Stub MeterRegistry to return a mock Counter (lenient to avoid UnnecessaryStubbingException)
         lenient().when(meterRegistry.counter(anyString(), any(String[].class))).thenReturn(mockCounter);
+        // @Value is not processed outside Spring; default to direct-Kafka mode (the docker-compose default).
+        ReflectionTestUtils.setField(useCase, "cdcEnabled", false);
     }
 
     @Test
@@ -96,21 +107,68 @@ class CreateClaimUseCaseTest {
 
     @Test
     void should_PublishClaimSubmittedEvent_When_ClaimCreated() {
-        UUID userId = UUID.randomUUID();
-        when(userRepository.findById(UserId.of(userId))).thenReturn(Optional.of(mock(User.class)));
-        when(claimRepository.save(any(Claim.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        UUID userId = givenUserExistsAndSaveEchoes();
 
-        CreateClaimCommand command = ClaimTestBuilder.aClaim()
+        Claim result = useCase.execute(ClaimTestBuilder.aClaim()
                 .withUserId(userId)
                 .withIncidentLocation("456 Oak Avenue, Chicago")
                 .withClaimAmount(new BigDecimal("2000.00"))
-                .toCommand();
+                .toCommand());
 
-        Claim result = useCase.execute(command);
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, times(1)).publishEvent(captor.capture());
+        ClaimSubmitted event = (ClaimSubmitted) captor.getValue();
+        assertThat(event.claimId()).isEqualTo(result.getClaimId());
+        assertThat(event.userId()).isEqualTo(userId);
 
-        assertThat(result.getDomainEvents()).isNotEmpty();
+        // Events are cleared after direct publish so they are not published twice.
+        assertThat(result.getDomainEvents()).isEmpty();
+    }
+
+    @Test
+    void should_PublishAfterSave_When_ClaimCreated() {
+        UUID userId = givenUserExistsAndSaveEchoes();
+
+        useCase.execute(ClaimTestBuilder.aClaim().withUserId(userId).toCommand());
+
+        InOrder inOrder = inOrder(claimRepository, eventPublisher);
+        inOrder.verify(claimRepository).save(any(Claim.class));
+        inOrder.verify(eventPublisher).publishEvent(any(Object.class));
+    }
+
+    @Test
+    void should_NotPublishButRetainEvent_When_CdcEnabled() {
+        ReflectionTestUtils.setField(useCase, "cdcEnabled", true);
+        UUID userId = givenUserExistsAndSaveEchoes();
+
+        Claim result = useCase.execute(ClaimTestBuilder.aClaim().withUserId(userId).toCommand());
+
+        // Debezium publishes from the DB WAL; the use case must not also publish.
+        verifyNoInteractions(eventPublisher);
         assertThat(result.getDomainEvents())
-                .anyMatch(event -> event.getClass().getSimpleName().equals("ClaimSubmitted"));
+                .singleElement()
+                .isInstanceOf(ClaimSubmitted.class);
+    }
+
+    @Test
+    void should_IncrementSubmittedCounter_WithTags_When_ClaimCreated() {
+        UUID userId = givenUserExistsAndSaveEchoes();
+
+        useCase.execute(ClaimTestBuilder.aClaim().withUserId(userId).toCommand());
+
+        verify(meterRegistry).counter("claims.submitted", "status", "SUBMITTED", "userId", userId.toString());
+        verify(mockCounter).increment();
+    }
+
+    @Test
+    void should_NotPublishOrCount_When_UserDoesNotExist() {
+        UUID userId = UUID.randomUUID();
+        when(userRepository.findById(UserId.of(userId))).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> useCase.execute(ClaimTestBuilder.aClaim().withUserId(userId).toCommand()))
+                .isInstanceOf(UserNotFoundException.class);
+
+        verifyNoInteractions(eventPublisher, mockCounter);
     }
 
     @Test
@@ -131,5 +189,12 @@ class CreateClaimUseCaseTest {
         assertThat(result.getStatus()).isEqualTo(ClaimStatus.SUBMITTED);
         assertThat(result.getCreatedAt()).isNotNull();
         assertThat(result.getUpdatedAt()).isNotNull();
+    }
+
+    private UUID givenUserExistsAndSaveEchoes() {
+        UUID userId = UUID.randomUUID();
+        when(userRepository.findById(UserId.of(userId))).thenReturn(Optional.of(mock(User.class)));
+        when(claimRepository.save(any(Claim.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        return userId;
     }
 }

@@ -110,8 +110,11 @@ describe('WizardStep2', () => {
 
       const textarea = screen.getByLabelText(/Describe what happened/i);
 
+      // Paste instead of type: typing 950 keystrokes one-by-one exceeds the 5s test timeout, and the
+      // timed-out typing loop keeps running and starves the following tests (cascade of failures).
       const longText = 'a'.repeat(950);
-      await user.type(textarea, longText);
+      await user.click(textarea);
+      await user.paste(longText);
 
       await waitFor(() => {
         const counter = screen.getByText('950/1000');
