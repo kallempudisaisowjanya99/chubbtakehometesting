@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | **Scope** | UI (Next.js), BFF, claims-service, and their infrastructure (Keycloak, PostgreSQL, Redis, Kafka, Debezium) |
-| **Related** | [UNIT_TEST_NOTES.md](UNIT_TEST_NOTES.md) · [INTEGRATION_TEST_NOTES.md](INTEGRATION_TEST_NOTES.md) · [E2E_TEST_NOTES.md](E2E_TEST_NOTES.md) · [ARCHITECTURE.md](ARCHITECTURE.md) |
+| **Related** | [UNIT_TEST_NOTES.md](UNIT_TEST_NOTES.md) · [INTEGRATION_TEST_NOTES.md](INTEGRATION_TEST_NOTES.md) · [CONTRACT_TEST_NOTES.md](CONTRACT_TEST_NOTES.md) · [E2E_TEST_NOTES.md](E2E_TEST_NOTES.md) · [ARCHITECTURE.md](ARCHITECTURE.md) |
 
 ## 1. Purpose
 
@@ -56,7 +56,7 @@ The suite is a test pyramid: many fast, isolated tests at the bottom, and a few 
 |---|---|---|---|---|
 | **Unit** | Business rules, mapping, validation, components, in isolation | JUnit 5, Mockito, AssertJ, JaCoCo · Vitest, React Testing Library | Nothing external | ✅ 728 tests, all pass |
 | **Integration** | A service works with its real infrastructure: DB schema and queries, Redis, Kafka, JWT security | Spring Boot Test + **Testcontainers** | Real Postgres, Redis, Kafka in Docker | ✅ Done; found D1–D4 |
-| **Contract** | The BFF and claims-service agree on the API, without deploying both | **Pact** (BFF = consumer, claims-service = provider; already in the POMs) | Mock provider; provider verification | ⏳ Planned |
+| **Contract** | The BFF and claims-service agree on the API, without deploying both | **Pact** (BFF = consumer, claims-service = provider; already in the POMs) | Mock provider; provider verification on Testcontainers | ✅ 15 interactions; 14 verify, 1 fails (D3) |
 | **End-to-end** | Main user journeys work through the real UI on the full stack | **Playwright** | Full Docker stack | ✅ 29 tests; found D5–D8 |
 | **Performance** | Response times and errors under expected and peak load | **k6** | Full stack (perf-sized) | ⏳ Planned |
 | **Security** | Authorization, CSRF, input handling, dependency CVEs | Integration and E2E negative tests, OWASP ZAP baseline, `mvn dependency-check` / `npm audit` | Integration env / full stack | 🟡 Part done (authorization and CSRF found D1, D6) |
@@ -76,10 +76,10 @@ The suite is a test pyramid: many fast, isolated tests at the bottom, and a few 
   - real Spring Security with signed test JWTs (this is how D1 was found).
 - Container images are pinned, so results are repeatable.
 
-### 4.3 Contract (planned)
-- **Consumer side:** the BFF writes Pact tests for every claims-service call it makes (claims CRUD, admin, users), including error responses (400, 403, 404).
-- **Provider side:** claims-service verifies the pacts with state handlers that seed the data.
-- Pacts are shared through a Pact Broker (or as CI artifacts), and `can-i-deploy` gates each release.
+### 4.3 Contract
+- **Consumer side (done):** the BFF's real client code is tested against a Pact mock server for every claims-service call it makes (claims, users, admin), including the error responses it branches on (400, 403, 404, 409).
+- **Provider side (done):** claims-service verifies the pact on the Testcontainers stack, with real Keycloak tokens and state handlers that create the data.
+- **Planned:** share pacts through a Pact Broker (or as CI artifacts), and gate each release with `can-i-deploy`.
 - **Events:** contract-test the Kafka messages against the existing AsyncAPI schemas (Pact message pacts, or schema validation, which is currently turned off).
 - Contract tests take over the job of the WireMock stubs in `bff-service/mocks`. Without contract tests, those stubs can drift out of date.
 
@@ -224,7 +224,7 @@ The suite is a test pyramid: many fast, isolated tests at the bottom, and a few 
 ## 11. Next steps
 
 1. Fix D1–D8 (with sign-off), then rerun all suites to confirm.
-2. Add Pact contract tests (§4.3).
+2. Publish pacts to a Pact Broker and add Kafka message pacts (§4.3).
 3. Add k6 load tests (§4.5).
 4. Write the manual test scripts (§4.7).
 5. Set up the CI pipeline (§6).

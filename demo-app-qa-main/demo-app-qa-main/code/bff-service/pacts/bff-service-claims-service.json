@@ -1,0 +1,1221 @@
+{
+  "consumer": {
+    "name": "bff-service"
+  },
+  "interactions": [
+    {
+      "description": "a claimant asks for a claim they do not own",
+      "providerStates": [
+        {
+          "name": "a claim owned by another user exists"
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "STRING",
+            "expression": "/api/claims/${claimId}",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Authorization": "Bearer claimant-token"
+        },
+        "method": "GET",
+        "path": "/api/claims/660e8400-e29b-41d4-a716-446655440001"
+      },
+      "response": {
+        "status": 403
+      }
+    },
+    {
+      "description": "the BFF looks up a user by id",
+      "providerStates": [
+        {
+          "name": "a user exists",
+          "params": {
+            "email": "pact.new.user@example.com",
+            "userId": "7a1c4f00-0000-4000-8000-000000c0ffee"
+          }
+        }
+      ],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer service-account-token"
+        },
+        "method": "GET",
+        "path": "/api/users/7a1c4f00-0000-4000-8000-000000c0ffee"
+      },
+      "response": {
+        "body": {
+          "createdAt": "2026-02-17T10:30:00Z",
+          "email": "pact.new.user@example.com",
+          "name": "Pact New User",
+          "role": "CLAIMANT",
+          "userId": "7a1c4f00-0000-4000-8000-000000c0ffee"
+        },
+        "headers": {
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "matchingRules": {
+          "body": {
+            "$.createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.role": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "CLAIMANT|ADMIN"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json(;\\s?charset=[\\w\\-]+)?"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "the BFF provisions a user that already exists",
+      "providerStates": [
+        {
+          "name": "a user exists",
+          "params": {
+            "email": "pact.new.user@example.com",
+            "userId": "7a1c4f00-0000-4000-8000-000000c0ffee"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "email": "pact.new.user@example.com",
+          "name": "Pact New User",
+          "role": "CLAIMANT",
+          "userId": "7a1c4f00-0000-4000-8000-000000c0ffee"
+        },
+        "headers": {
+          "Authorization": "Bearer service-account-token",
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "method": "POST",
+        "path": "/api/users"
+      },
+      "response": {
+        "body": {
+          "createdAt": "2026-02-17T10:30:00Z",
+          "email": "pact.new.user@example.com",
+          "name": "Pact New User",
+          "role": "CLAIMANT",
+          "userId": "7a1c4f00-0000-4000-8000-000000c0ffee"
+        },
+        "headers": {
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "matchingRules": {
+          "body": {
+            "$.createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+                }
+              ]
+            },
+            "$.name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json(;\\s?charset=[\\w\\-]+)?"
+                }
+              ]
+            }
+          }
+        },
+        "status": 409
+      }
+    },
+    {
+      "description": "a claimant asks for a claim that does not exist",
+      "providerStates": [
+        {
+          "name": "no claim exists with the requested id"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer claimant-token"
+        },
+        "method": "GET",
+        "path": "/api/claims/00000000-0000-4000-8000-00000000dead"
+      },
+      "response": {
+        "status": 404
+      }
+    },
+    {
+      "description": "an admin updates a claim that does not exist",
+      "providerStates": [
+        {
+          "name": "no claim exists with the requested id"
+        }
+      ],
+      "request": {
+        "body": {
+          "newStatus": "UNDER_REVIEW"
+        },
+        "headers": {
+          "Authorization": "Bearer admin-token",
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "method": "PATCH",
+        "path": "/api/admin/claims/00000000-0000-4000-8000-00000000dead/status"
+      },
+      "response": {
+        "status": 404
+      }
+    },
+    {
+      "description": "the BFF provisions a new user",
+      "providerStates": [
+        {
+          "name": "no user exists with the given id and email",
+          "params": {
+            "email": "pact.new.user@example.com",
+            "userId": "7a1c4f00-0000-4000-8000-000000c0ffee"
+          }
+        }
+      ],
+      "request": {
+        "body": {
+          "email": "pact.new.user@example.com",
+          "name": "Pact New User",
+          "role": "CLAIMANT",
+          "userId": "7a1c4f00-0000-4000-8000-000000c0ffee"
+        },
+        "headers": {
+          "Authorization": "Bearer service-account-token",
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "method": "POST",
+        "path": "/api/users"
+      },
+      "response": {
+        "body": {
+          "createdAt": "2026-02-17T10:30:00Z",
+          "email": "pact.new.user@example.com",
+          "name": "Pact New User",
+          "role": "CLAIMANT",
+          "userId": "7a1c4f00-0000-4000-8000-000000c0ffee"
+        },
+        "headers": {
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "matchingRules": {
+          "body": {
+            "$.createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json(;\\s?charset=[\\w\\-]+)?"
+                }
+              ]
+            }
+          }
+        },
+        "status": 201
+      }
+    },
+    {
+      "description": "the BFF flushes the dashboard cache",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer service-account-token"
+        },
+        "method": "POST",
+        "path": "/api/admin/dashboard/flush-cache"
+      },
+      "response": {
+        "status": 204
+      }
+    },
+    {
+      "description": "a claimant submits a claim",
+      "providerStates": [
+        {
+          "name": "the admin and the claimant are registered"
+        }
+      ],
+      "request": {
+        "body": {
+          "claimAmount": 2500.5,
+          "description": "Water damage to basement due to pipe burst",
+          "incidentDate": "2026-02-15",
+          "incidentLocation": "123 Main St, Springfield, IL"
+        },
+        "headers": {
+          "Authorization": "Bearer claimant-token",
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "method": "POST",
+        "path": "/api/claims"
+      },
+      "response": {
+        "body": {
+          "claimAmount": 2500.5,
+          "claimId": "660e8400-e29b-41d4-a716-446655440001",
+          "createdAt": "2026-02-17T10:30:00Z",
+          "description": "Water damage to basement due to pipe burst",
+          "incidentDate": "2000-01-31",
+          "incidentLocation": "123 Main St, Springfield, IL",
+          "status": "SUBMITTED",
+          "updatedAt": "2026-02-17T10:30:00Z",
+          "userId": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "generators": {
+          "body": {
+            "$.incidentDate": {
+              "format": "yyyy-MM-dd",
+              "type": "Date"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "matchingRules": {
+          "body": {
+            "$.claimAmount": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.claimId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$.createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+                }
+              ]
+            },
+            "$.description": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.incidentDate": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "format": "yyyy-MM-dd",
+                  "match": "date"
+                }
+              ]
+            },
+            "$.incidentLocation": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.updatedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+                }
+              ]
+            },
+            "$.userId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json(;\\s?charset=[\\w\\-]+)?"
+                }
+              ]
+            }
+          }
+        },
+        "status": 201
+      }
+    },
+    {
+      "description": "an admin lists all users",
+      "providerStates": [
+        {
+          "name": "the admin and the claimant are registered"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer admin-token"
+        },
+        "method": "GET",
+        "path": "/api/users"
+      },
+      "response": {
+        "body": [
+          {
+            "createdAt": "2026-02-17T10:30:00Z",
+            "email": "jane.doe@example.com",
+            "name": "Jane Doe",
+            "role": "CLAIMANT",
+            "userId": "550e8400-e29b-41d4-a716-446655440000"
+          }
+        ],
+        "headers": {
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$[*].createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+                }
+              ]
+            },
+            "$[*].email": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].name": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].role": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "CLAIMANT|ADMIN"
+                }
+              ]
+            },
+            "$[*].userId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json(;\\s?charset=[\\w\\-]+)?"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a claimant lists their claims",
+      "providerStates": [
+        {
+          "name": "the claimant has a submitted claim"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer claimant-token"
+        },
+        "method": "GET",
+        "path": "/api/claims"
+      },
+      "response": {
+        "body": [
+          {
+            "claimAmount": 2500.5,
+            "claimId": "660e8400-e29b-41d4-a716-446655440001",
+            "createdAt": "2026-02-17T10:30:00Z",
+            "description": "Water damage to basement due to pipe burst",
+            "incidentDate": "2000-01-31",
+            "status": "SUBMITTED"
+          }
+        ],
+        "generators": {
+          "body": {
+            "$[*].incidentDate": {
+              "format": "yyyy-MM-dd",
+              "type": "Date"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$[*].claimAmount": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$[*].claimId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$[*].createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+                }
+              ]
+            },
+            "$[*].description": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].incidentDate": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "format": "yyyy-MM-dd",
+                  "match": "date"
+                }
+              ]
+            },
+            "$[*].status": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "SUBMITTED|UNDER_REVIEW|APPROVED|REJECTED|CLOSED"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json(;\\s?charset=[\\w\\-]+)?"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "a claimant views one of their claims",
+      "providerStates": [
+        {
+          "name": "the claimant has a submitted claim"
+        }
+      ],
+      "request": {
+        "generators": {
+          "path": {
+            "dataType": "STRING",
+            "expression": "/api/claims/${claimId}",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Authorization": "Bearer claimant-token"
+        },
+        "method": "GET",
+        "path": "/api/claims/660e8400-e29b-41d4-a716-446655440001"
+      },
+      "response": {
+        "body": {
+          "claimAmount": 2500.5,
+          "claimId": "660e8400-e29b-41d4-a716-446655440001",
+          "createdAt": "2026-02-17T10:30:00Z",
+          "description": "Water damage to basement due to pipe burst",
+          "incidentDate": "2000-01-31",
+          "incidentLocation": "123 Main St, Springfield, IL",
+          "status": "SUBMITTED",
+          "updatedAt": "2026-02-17T10:30:00Z",
+          "userId": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "generators": {
+          "body": {
+            "$.claimId": {
+              "dataType": "STRING",
+              "expression": "${claimId}",
+              "type": "ProviderState"
+            },
+            "$.incidentDate": {
+              "format": "yyyy-MM-dd",
+              "type": "Date"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "matchingRules": {
+          "body": {
+            "$.claimAmount": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.claimId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+                }
+              ]
+            },
+            "$.description": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.incidentDate": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "format": "yyyy-MM-dd",
+                  "match": "date"
+                }
+              ]
+            },
+            "$.incidentLocation": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.updatedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+                }
+              ]
+            },
+            "$.userId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json(;\\s?charset=[\\w\\-]+)?"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "an admin lists one user's submitted claims",
+      "providerStates": [
+        {
+          "name": "the claimant has a submitted claim"
+        }
+      ],
+      "request": {
+        "generators": {
+          "query": {
+            "userId": {
+              "dataType": "STRING",
+              "expression": "${userId}",
+              "type": "ProviderState"
+            }
+          }
+        },
+        "headers": {
+          "Authorization": "Bearer service-account-token"
+        },
+        "method": "GET",
+        "path": "/api/admin/claims",
+        "query": {
+          "status": [
+            "SUBMITTED"
+          ],
+          "userId": [
+            "550e8400-e29b-41d4-a716-446655440000"
+          ]
+        }
+      },
+      "response": {
+        "body": [
+          {
+            "claimAmount": 2500.5,
+            "claimId": "660e8400-e29b-41d4-a716-446655440001",
+            "createdAt": "2026-02-17T10:30:00Z",
+            "description": "Water damage to basement due to pipe burst",
+            "incidentDate": "2000-01-31",
+            "incidentLocation": "123 Main St, Springfield, IL",
+            "status": "SUBMITTED",
+            "updatedAt": "2026-02-17T10:30:00Z",
+            "userEmail": "jane.doe@example.com",
+            "userId": "550e8400-e29b-41d4-a716-446655440000",
+            "userName": "Jane Doe"
+          }
+        ],
+        "generators": {
+          "body": {
+            "$[*].incidentDate": {
+              "format": "yyyy-MM-dd",
+              "type": "Date"
+            },
+            "$[*].userId": {
+              "dataType": "STRING",
+              "expression": "${userId}",
+              "type": "ProviderState"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "matchingRules": {
+          "body": {
+            "$": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type",
+                  "min": 1
+                }
+              ]
+            },
+            "$[*].claimAmount": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$[*].claimId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            },
+            "$[*].createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+                }
+              ]
+            },
+            "$[*].description": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].incidentDate": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "format": "yyyy-MM-dd",
+                  "match": "date"
+                }
+              ]
+            },
+            "$[*].incidentLocation": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].updatedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+                }
+              ]
+            },
+            "$[*].userEmail": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].userId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$[*].userName": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json(;\\s?charset=[\\w\\-]+)?"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "an admin moves a submitted claim to UNDER_REVIEW",
+      "providerStates": [
+        {
+          "name": "the claimant has a submitted claim"
+        }
+      ],
+      "request": {
+        "body": {
+          "newStatus": "UNDER_REVIEW"
+        },
+        "generators": {
+          "path": {
+            "dataType": "STRING",
+            "expression": "/api/admin/claims/${claimId}/status",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Authorization": "Bearer admin-token",
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "method": "PATCH",
+        "path": "/api/admin/claims/660e8400-e29b-41d4-a716-446655440001/status"
+      },
+      "response": {
+        "body": {
+          "claimAmount": 2500.5,
+          "claimId": "660e8400-e29b-41d4-a716-446655440001",
+          "createdAt": "2026-02-17T10:30:00Z",
+          "description": "Water damage to basement due to pipe burst",
+          "incidentDate": "2000-01-31",
+          "incidentLocation": "123 Main St, Springfield, IL",
+          "status": "UNDER_REVIEW",
+          "updatedAt": "2026-02-17T10:30:00Z",
+          "userId": "550e8400-e29b-41d4-a716-446655440000"
+        },
+        "generators": {
+          "body": {
+            "$.claimId": {
+              "dataType": "STRING",
+              "expression": "${claimId}",
+              "type": "ProviderState"
+            },
+            "$.incidentDate": {
+              "format": "yyyy-MM-dd",
+              "type": "Date"
+            }
+          }
+        },
+        "headers": {
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "matchingRules": {
+          "body": {
+            "$.claimAmount": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "number"
+                }
+              ]
+            },
+            "$.claimId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.createdAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+                }
+              ]
+            },
+            "$.description": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.incidentDate": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "format": "yyyy-MM-dd",
+                  "match": "date"
+                }
+              ]
+            },
+            "$.incidentLocation": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.updatedAt": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+                }
+              ]
+            },
+            "$.userId": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json(;\\s?charset=[\\w\\-]+)?"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    },
+    {
+      "description": "an admin tries a transition that is not allowed (SUBMITTED to CLOSED)",
+      "providerStates": [
+        {
+          "name": "the claimant has a submitted claim"
+        }
+      ],
+      "request": {
+        "body": {
+          "newStatus": "CLOSED"
+        },
+        "generators": {
+          "path": {
+            "dataType": "STRING",
+            "expression": "/api/admin/claims/${claimId}/status",
+            "type": "ProviderState"
+          }
+        },
+        "headers": {
+          "Authorization": "Bearer admin-token",
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "method": "PATCH",
+        "path": "/api/admin/claims/660e8400-e29b-41d4-a716-446655440001/status"
+      },
+      "response": {
+        "status": 400
+      }
+    },
+    {
+      "description": "the BFF fetches dashboard stats, bypassing the cache",
+      "providerStates": [
+        {
+          "name": "the claimant has a submitted claim"
+        }
+      ],
+      "request": {
+        "headers": {
+          "Authorization": "Bearer service-account-token"
+        },
+        "method": "GET",
+        "path": "/api/admin/dashboard/stats",
+        "query": {
+          "bypassCache": [
+            "true"
+          ]
+        }
+      },
+      "response": {
+        "body": {
+          "cacheHit": false,
+          "claimsByStatus": {
+            "SUBMITTED": 1
+          },
+          "queryTimeMs": 12,
+          "totalClaims": 1,
+          "totalUsers": 2
+        },
+        "headers": {
+          "Content-Type": "application/json; charset=UTF-8"
+        },
+        "matchingRules": {
+          "body": {
+            "$.cacheHit": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "type"
+                }
+              ]
+            },
+            "$.claimsByStatus": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "values"
+                }
+              ]
+            },
+            "$.claimsByStatus.*": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.queryTimeMs": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.totalClaims": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            },
+            "$.totalUsers": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "integer"
+                }
+              ]
+            }
+          },
+          "header": {
+            "Content-Type": {
+              "combine": "AND",
+              "matchers": [
+                {
+                  "match": "regex",
+                  "regex": "application/json(;\\s?charset=[\\w\\-]+)?"
+                }
+              ]
+            }
+          }
+        },
+        "status": 200
+      }
+    }
+  ],
+  "metadata": {
+    "pact-jvm": {
+      "version": "4.6.3"
+    },
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  },
+  "provider": {
+    "name": "claims-service"
+  }
+}
