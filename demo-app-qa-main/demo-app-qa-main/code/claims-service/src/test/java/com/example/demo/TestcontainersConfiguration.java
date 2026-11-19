@@ -10,27 +10,42 @@ import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
+/**
+ * Shared Testcontainers for integration tests.
+ *
+ * <p>Image versions are pinned to match {@code docker-compose.infra.yml} so tests run against the same
+ * versions as the real stack. Floating {@code :latest} tags made runs non-reproducible — e.g.
+ * {@code postgres:latest} rejects legacy JVM timezone aliases such as {@code Asia/Calcutta}, which broke
+ * context startup on machines in that timezone while production ({@code postgres:15-alpine}) accepts it.
+ * Kafka uses {@code apache/kafka-native} because that is the image family Testcontainers' {@link KafkaContainer}
+ * supports (compose uses Confluent's cp-kafka; both speak the same protocol).
+ */
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
+
+	static final String KAFKA_IMAGE = "apache/kafka-native:3.8.0";
+	static final String POSTGRES_IMAGE = "postgres:15-alpine";
+	static final String REDIS_IMAGE = "redis:7-alpine";
+	static final String KEYCLOAK_IMAGE = "quay.io/keycloak/keycloak:26.5.2";
 
 	@Bean
 	@ServiceConnection
 	KafkaContainer kafkaContainer() {
-		return new KafkaContainer(DockerImageName.parse("apache/kafka-native:latest"))
+		return new KafkaContainer(DockerImageName.parse(KAFKA_IMAGE))
 				.withReuse(true);
 	}
 
 	@Bean
 	@ServiceConnection
 	PostgreSQLContainer postgresContainer() {
-		return new PostgreSQLContainer(DockerImageName.parse("postgres:latest"))
+		return new PostgreSQLContainer(DockerImageName.parse(POSTGRES_IMAGE))
 				.withReuse(true);
 	}
 
 	@Bean
 	@ServiceConnection(name = "redis")
 	GenericContainer<?> redisContainer() {
-		return new GenericContainer<>(DockerImageName.parse("redis:latest"))
+		return new GenericContainer<>(DockerImageName.parse(REDIS_IMAGE))
 				.withExposedPorts(6379)
 				.withCommand("redis-server", "--databases", "32")
 				.withReuse(true);
@@ -38,7 +53,7 @@ public class TestcontainersConfiguration {
 
 	@Bean
 	KeycloakContainer keycloakContainer() {
-		return new KeycloakContainer("quay.io/keycloak/keycloak:26.1.4")
+		return new KeycloakContainer(KEYCLOAK_IMAGE)
 				.withRealmImportFile("keycloak/demo-app-realm.json")
 				.withReuse(true);
 	}
